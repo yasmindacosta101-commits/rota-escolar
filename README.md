@@ -7,8 +7,9 @@ O sistema tem como foco a organização das rotas e o controle dos alunos que ut
 
 Durante as rotas escolares, podem ocorrer situações como:
 
--O motorista esquecer de passar em um ponto de embarque;
-- O motorista não saber quais alunos deveriam embarcar em cada ponto;
+- Esquecer de passar em um ponto;
+  
+- Não saber quais alunos deveriam embarcar em cada ponto;
 - Falta de controle sobre quais alunos utilizam determinada rota;
 - Dificuldade para registrar quais alunos embarcaram.
 
@@ -17,7 +18,6 @@ O motorista poderá consultar sua rota e visualizar a lista de alunos que devem 
 
 ## Usuários do sistema
 ## 🏫 Escola
-A escola poderá:
 
 - Cadastrar alunos;
 - Cadastrar motoristas;
@@ -27,7 +27,6 @@ A escola poderá:
 - Consultar os alunos de cada rota.
 
 ## 🚌 Motorista
-O motorista poderá:
 
 - Visualizar sua rota;
 - Visualizar os pontos de embarque;
@@ -38,7 +37,7 @@ O motorista poderá:
 ## ⚙️ Principais funcionalidades
 ## 🗺️ Organização das rotas
 
-A escola poderá cadastrar as rotas utilizadas pelo transporte escolar e definir seus respectivos pontos de embarque.
+A escola poderá cadastrar as rotas utilizadas pelo transporte escolar e definir seus pontos de embarque.
 
 ## 👧 Cadastro de alunos
 
