@@ -31,3 +31,6 @@ O aluno está associado a uma rota e a um ponto de embarque. O motorista consult
 ## Fluxograma
 
 O fluxograma abaixo representa visualmente o funcionamento principal da solução.
+
+<img width="900" height="1600" alt="WhatsApp Image 2026-08-20 at 15 18 23" src="https://github.com/user-attachments/assets/210e8d89-178a-41ab-8aca-3db26c2363d3" />
+
