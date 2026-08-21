@@ -32,5 +32,5 @@ O aluno está associado a uma rota e a um ponto de embarque. O motorista consult
 
 O fluxograma abaixo representa visualmente o funcionamento principal da solução.
 
-<img width="900" height="1600" alt="WhatsApp Image 2026-08-20 at 15 18 23" src="https://github.com/user-attachments/assets/210e8d89-178a-41ab-8aca-3db26c2363d3" />
+<img width="717" height="2079" alt="mermaid-diagram-2026-08-20-192215" src="https://github.com/user-attachments/assets/36eeaece-3d4f-4bb1-b033-44a7a02b2bd6" />
 
