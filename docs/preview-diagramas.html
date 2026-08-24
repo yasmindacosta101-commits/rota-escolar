@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Rota Escolar - Prévia dos Diagramas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f6f8fa;
+    margin: 0;
+    padding: 20px;
+    color: #24292f;
+  }
+  h1 {
+    font-size: 20px;
+    border-bottom: 1px solid #d0d7de;
+    padding-bottom: 8px;
+  }
+  h2 {
+    font-size: 16px;
+    margin-top: 32px;
+    color: #0969da;
+  }
+  p.desc {
+    font-size: 14px;
+    color: #57606a;
+    margin-top: -4px;
+  }
+  .card {
+    background: white;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin-bottom: 24px;
+  }
+  .legend {
+    background: white;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  .legend table { border-collapse: collapse; width: 100%; }
+  .legend td { padding: 6px 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<h1>🚌 Rota Escolar — Diagramas revisados (arquitetura.md)</h1>
+
+<h2>Legenda dos símbolos</h2>
+<div class="legend">
+<table>
+<tr><td>⬭ Oval</td><td>Início / Fim do fluxo</td></tr>
+<tr><td>▭▭ Retângulo duplo</td><td>Menu / tela principal</td></tr>
+<tr><td>▭ Retângulo simples</td><td>Ação ou etapa do processo</td></tr>
+<tr><td>⬦ Losango</td><td>Decisão (pergunta com Sim/Não)</td></tr>
+<tr><td>⌭ Cilindro</td><td>Salvamento de dados</td></tr>
+</table>
+</div>
+
+<h2>1. Visão geral do sistema</h2>
+<p class="desc">Mostra o caminho de entrada e a divisão entre os dois tipos de usuário, sem entrar em detalhe de cada cadastro.</p>
+<div class="card">
+<pre class="mermaid">
+flowchart TD
+    A([Início: Acesso ao sistema]) --> B{Usuário é Escola ou Motorista?}
+    B -->|Escola| C[[Menu da Escola]]
+    B -->|Motorista| D[[Menu do Motorista]]
+    C --> C0[Ver detalhamento no Diagrama 2]
+    D --> D0[Ver detalhamento no Diagrama 3]
+    C0 --> Z([Fim])
+    D0 --> Z
+</pre>
+</div>
+
+<h2>2. Fluxo detalhado — Escola (cadastros)</h2>
+<p class="desc">Cobre RF01 a RF05: cadastro de alunos, motoristas, rotas, pontos de embarque e associação do aluno à rota/ponto.</p>
+<div class="card">
+<pre class="mermaid">
+flowchart TD
+    C([Menu da Escola]) --> C1[Cadastrar aluno]
+    C --> C2[Cadastrar motorista]
+    C --> C3[Cadastrar rota]
+    C --> C4[Cadastrar ponto de embarque]
+    C --> C5[Associar aluno a rota e ao ponto]
+
+    subgraph SG1[RF01 - Cadastro de aluno]
+    C1 --> V1{Dados validos?}
+    V1 -->|Nao| E1[Exibir mensagem de erro]
+    E1 --> C1
+    V1 -->|Sim| S1[(Salvar aluno)]
+    end
+
+    subgraph SG2[RF02 - Cadastro de motorista]
+    C2 --> V2{Dados validos?}
+    V2 -->|Nao| E2[Exibir mensagem de erro]
+    E2 --> C2
+    V2 -->|Sim| S2[(Salvar motorista)]
+    end
+
+    subgraph SG3[RF03 - Cadastro de rota]
+    C3 --> V3{Dados validos?}
+    V3 -->|Nao| E3[Exibir mensagem de erro]
+    E3 --> C3
+    V3 -->|Sim| S3[(Salvar rota)]
+    end
+
+    subgraph SG4[RF04 - Cadastro de ponto de embarque]
+    C4 --> V4{Rota ja cadastrada?}
+    V4 -->|Nao| E4[Exibir mensagem: cadastre a rota primeiro]
+    V4 -->|Sim| S4[(Salvar ponto de embarque)]
+    end
+    E4 -.-> C3
+
+    subgraph SG5[RF05 - Associacao aluno rota ponto]
+    C5 --> V5{Aluno, rota e ponto existem?}
+    V5 -->|Nao| E5[Exibir mensagem de erro]
+    E5 --> C5
+    V5 -->|Sim| S5[(Salvar associacao)]
+    end
+
+    S1 --> C
+    S2 --> C
+    S3 --> C
+    S4 --> C
+    S5 --> C
+</pre>
+</div>
+
+<h2>3. Fluxo detalhado — Motorista (rota e embarque)</h2>
+<p class="desc">Cobre RF06 a RF08: consulta da rota, visualização dos alunos por ponto e registro de embarque.</p>
+<div class="card">
+<pre class="mermaid">
+flowchart TD
+    D([Menu do Motorista]) --> D1[Consultar rota]
+    D1 --> D2[Visualizar pontos de embarque da rota]
+    D2 --> D3[Selecionar ponto de embarque]
+    D3 --> D4[Visualizar alunos do ponto]
+    D4 --> D5[Selecionar aluno]
+    D5 --> E{Aluno embarcou?}
+    E -->|Sim| F1[Marcar: Embarcou]
+    E -->|Nao| F2[Marcar: Nao embarcou]
+    F1 --> G[(Salvar registro de embarque)]
+    F2 --> G
+    G --> H{Ainda ha alunos neste ponto?}
+    H -->|Sim| D4
+    H -->|Nao| I{Ainda ha pontos nesta rota?}
+    I -->|Sim| D2
+    I -->|Nao| D
+</pre>
+</div>
+
+<h2>4. Modelo Entidade-Relacionamento</h2>
+<p class="desc">Um motorista conduz uma rota; a rota tem vários pontos de embarque e vários alunos; cada aluno pertence a um ponto; cada registro de embarque referencia o aluno e o ponto correspondente.</p>
+<div class="card">
+<pre class="mermaid">
+erDiagram
+    MOTORISTA ||--o| ROTA : "conduz"
+    ROTA ||--o{ PONTO_EMBARQUE : "possui"
+    ROTA ||--o{ ALUNO : "atende"
+    PONTO_EMBARQUE ||--o{ ALUNO : "recebe"
+    ALUNO ||--o{ REGISTRO_EMBARQUE : "possui"
+    PONTO_EMBARQUE ||--o{ REGISTRO_EMBARQUE : "referencia"
+
+    MOTORISTA {
+        int id_motorista PK
+        string nome
+        string cnh
+        string telefone
+    }
+
+    ROTA {
+        int id_rota PK
+        string nome_rota
+        string turno
+        int id_motorista FK
+    }
+
+    PONTO_EMBARQUE {
+        int id_ponto PK
+        string nome_ponto
+        string endereco
+        int id_rota FK
+    }
+
+    ALUNO {
+        int id_aluno PK
+        string nome
+        string turma
+        int id_rota FK
+        int id_ponto FK
+    }
+
+    REGISTRO_EMBARQUE {
+        int id_registro PK
+        int id_aluno FK
+        int id_ponto FK
+        date data
+        boolean embarcou
+    }
+</pre>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'default' });
+</script>
+
+</body>
+</html>
