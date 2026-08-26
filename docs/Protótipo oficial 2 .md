@@ -4,6 +4,32 @@
 
 O **Rota Escolar** é um sistema pensado para auxiliar a escola na organização do transporte escolar. Ele permite que a escola cadastre alunos, motoristas, rotas e pontos de embarque, associando cada aluno a uma rota e a um ponto específico. Além disso, o sistema permite que o motorista consulte sua rota, visualize os alunos que devem embarcar em cada ponto e registre se o embarque ocorreu ou não. O objetivo principal é organizar as informações do transporte escolar de forma simples, centralizada e de fácil consulta.
 
+
+
+Rastreabilidade e Gestão Ágil
+
+* **Quadro Kanban no Trello:** [https://trello.com/b/aJmun5Bu/rota-escolar-projintegrador-ll]
+
+
+---
+
+## Matriz de Permissões (RBAC)
+
+| Papel | Cadastrar Alunos/Motoristas | Criar Rotas e Pontos | Visualizar Rota e Alunos | Registrar Embarque |
+| :--- | :---: | :---: | :---: | :---: |
+| **Escola** | ✅ | ✅ | ✅ | ❌ |
+| **Motorista** | ❌ | ❌ | ✅ | ✅ |
+
+---
+
+## Regras de Negócio e Segurança
+
+* **Atribuição de Rota:** Cada motorista é associado a uma única rota por vez.
+* **Vínculo do Aluno:** O aluno deve estar vinculado obrigatoriamente a uma Rota e a um Ponto de Embarque específico.
+* **Restrição de Embarque:** Apenas o perfil Motorista possui permissão para registrar e salvar a presença/embarque dos alunos.
+* **Simplicidade do Escopo:** O sistema foca estritamente na gestão do transporte escolar, sem integração de GPS ou sistemas externos.
+
+
 ## 2. Usuários do sistema
 
 **Escola**
