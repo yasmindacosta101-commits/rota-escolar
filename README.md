@@ -48,4 +48,145 @@ A escola poderá cadastrar os alunos que utilizam o transporte escolar e associ�
 O motorista poderá visualizar os alunos previstos para cada ponto e registrar a situação do embarque.
 
 ## Objetivo
-Facilitar a organização do transporte escolar, ajudando a escola e os motoristas a controlarem as rotas e os embarques dos alunos.
+Facilitar a organização do transporte escolar, ajudando a escola e os motoristas a controlarem as rotas e os embarques dos alunos.        
+
+
+
+
+### Atualização README
+
+
+
+## ⚙️ Principais funcionalidades
+
+### 🔐 Sistema de login
+
+O sistema possui autenticação utilizando o Firebase Authentication.
+
+Existem dois tipos de acesso:
+
+- **Escola**
+- **Motorista**
+
+Cada usuário possui um perfil configurado no sistema. O motorista também é vinculado a uma rota específica.
+
+### 🗺️ Organização das rotas
+
+A escola pode cadastrar as rotas utilizadas pelo transporte escolar e definir o motorista responsável.
+
+Cada rota possui informações como:
+
+- Nome da rota;
+- Turno;
+- Motorista responsável;
+- Status da rota.
+
+### 📍 Pontos de embarque
+
+Os pontos de embarque podem ser cadastrados e organizados de acordo com a ordem do percurso.
+
+### 👧 Cadastro e associação de alunos
+
+A escola pode cadastrar os alunos e associá-los a:
+
+- Uma rota;
+- Um ponto de embarque.
+
+Dessa forma, o motorista consegue identificar quais alunos devem embarcar em cada ponto.
+
+### 🚌 Controle de embarque
+
+O motorista pode consultar os alunos previstos para cada ponto e registrar a situação de cada aluno:
+
+- Embarcou;
+- Não embarcou.
+
+## 🔥 Integração com Firebase
+
+O sistema utiliza o Firebase para autenticação e armazenamento dos dados.
+
+### Firebase Authentication
+
+Responsável pelo login dos usuários.
+
+### Firestore
+
+Responsável pelo armazenamento das informações do sistema, incluindo:
+
+- Usuários;
+- Alunos;
+- Motoristas;
+- Rotas;
+- Pontos de embarque;
+- Registros de embarque.
+
+## 🛠️ Tecnologias utilizadas
+
+- HTML5;
+- CSS;
+- JavaScript;
+- Firebase Authentication;
+- Firestore;
+- GitHub;
+- Trello;
+- Mermaid.js.
+
+## 📁 Organização do projeto
+
+O projeto possui arquivos separados de acordo com as principais funcionalidades:
+
+- `index.html` — estrutura principal da aplicação;
+- `style.css` — estilos da interface;
+- `App.js` — controle da interface e funcionamento geral;
+- `Firebase.js` — configuração e conexão com o Firebase;
+- `Login.js` — autenticação dos usuários;
+- `Alunos.js` — funções relacionadas aos alunos;
+- `Motorista.js` — funções relacionadas aos motoristas;
+- `Rotas.js` — funções relacionadas às rotas;
+- `Pontos.js` — funções relacionadas aos pontos de embarque;
+- `Embarques.js` — funções relacionadas aos registros de embarque.
+
+A documentação do projeto também contém arquivos relacionados à modelagem e aos testes.
+
+## 🧪 Testes realizados
+
+Foram realizados testes das principais funcionalidades do sistema, incluindo:
+
+- Login da Escola;
+- Login do Motorista;
+- Cadastro de alunos;
+- Cadastro de motoristas;
+- Cadastro de rotas;
+- Cadastro de pontos;
+- Associação de alunos;
+- Consulta da rota pelo motorista;
+- Consulta dos alunos por ponto;
+- Registro de embarque;
+- Logout;
+- Integração com Firebase.
+
+
+## 🔑 Como executar o projeto
+
+
+O projeto está publicado no GitHub Pages e pode ser acessado diretamente pelo navegador.
+
+### Execução online
+
+1. Acesse o link do GitHub Pages: https://yasmindacosta101-commits.github.io/rota-escolar/
+   [👉 Acessar o Rota Escolar]   
+2. Aguarde o carregamento do sistema.
+3. Faça login utilizando uma das contas de teste.
+4. Após o login, o usuário terá acesso às funcionalidades de acordo com seu perfil.
+
+### Execução local
+
+Para executar o projeto localmente:
+
+1. Baixe ou abra o repositório no computador.
+2. Abra a pasta do projeto no Visual Studio Code.
+3. Abra o arquivo `index.html` utilizando o Live Server.
+4. O sistema será aberto no navegador.
+5. Faça login com uma conta de teste.
+
+Os dados do sistema são armazenados no Firebase, utilizando o Firebase Authentication e o Firestore.
