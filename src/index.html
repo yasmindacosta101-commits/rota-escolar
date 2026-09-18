@@ -2,19 +2,35 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rota Escolar — Protótipo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div id="app"></div>
+<div id="app">
+  <div class="boot-msg">Carregando…</div>
+</div>
 
+<!-- 1) SDK do Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-<!-- Conexão com o Firebase -->
-<script src=script.js></script>
+<!-- 2) Conexão com o Firebase (cria as variáveis "db" e "auth") -->
+<!-- 2) Conexão com o Firebase (cria as variáveis "db" e "auth") -->
+<script src="firebase.js"></script>
 
+<!-- 3) Um arquivo por coleção do Firestore -->
+<script src="Login.js"></script>
+<script src="Alunos.js"></script>
+<script src="Motorista.js"></script>
+<script src="Rotas.js"></script>
+<script src="Pontos.js"></script>
+<script src="Embarques.js"></script>
+
+<!-- 4) Interface (por último, porque usa todas as funções acima) -->
+<script src="App.js"></script>
 </body>
 </html>

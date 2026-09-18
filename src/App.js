@@ -1,24 +1,23 @@
 /*
   js/app.js
   ------------------------------------------------------------
-  Controla as telas (login, Escola, Motorista) e chama as
-  funções dos outros arquivos (alunos.js, rotas.js, etc.) para
-  ler e gravar no Firestore. Esta é a evolução do antigo
-  script.js: a diferença é que os dados não ficam mais só na
-  memória da página — agora vêm do Firebase em tempo real.
+  Controla as telas (login, Escola, Motorista). Toda falha
+  possível (login, permissão, dado faltando) agora aparece como
+  mensagem na tela — nada fica "travado" em silêncio.
 */
 
 let state = {
-  tela: 'login',            // login | escola | motorista
+  tela: 'carregando',       // carregando | login | escola | motorista
   carregandoLogin: false,
   loginError: null,
+  erroGeral: null,           // erro de permissão/conexão vindo de um listener
 
-  papel: null,               // 'escola' | 'motorista'
+  papel: null,                // 'escola' | 'motorista'
   motoristaId: null,
   rotaId: null,
 
   escolaTab: 'alunos',
-  motoristaEtapa: 'rota',    // rota | pontos | alunos
+  motoristaEtapa: 'rota',
   pontoSelecionado: null,
 
   alunos: [],
@@ -30,15 +29,36 @@ let state = {
 
   formError: null,
 
-  _unsubscribers: [],        // funções para "desligar" os listeners do Firestore
+  _unsubscribers: [],
 };
 
-function render() { document.getElementById('app').innerHTML = App(); }
+function render() {
+  try {
+    document.getElementById('app').innerHTML = App();
+  } catch (erroDeRender) {
+    // Se algum bug de template acontecer, mostra em vez de deixar a tela em branco.
+    document.getElementById('app').innerHTML =
+      '<div class="full-state"><div class="box"><h2>Ops, algo quebrou na interface</h2><p>' +
+      (erroDeRender.message || erroDeRender) + '</p></div></div>';
+    console.error(erroDeRender);
+  }
+}
+
+/* ===================== ERRO GENÉRICO DE LISTENER ===================== */
+function tratarErroFirestore(erro) {
+  console.error('Erro do Firestore:', erro);
+  state.erroGeral =
+    (erro.code === 'permission-denied')
+      ? 'Sem permissão para ler estes dados. Confira as regras do Firestore e os campos rotaId/papel do seu usuário.'
+      : 'Erro ao carregar dados do Firestore: ' + (erro.message || erro.code || erro);
+  render();
+}
 
 /* ===================== AUTENTICAÇÃO ===================== */
 
 auth.onAuthStateChanged(function (user) {
   pararTodosOsListeners();
+  state.erroGeral = null;
 
   if (!user) {
     state.tela = 'login';
@@ -47,23 +67,39 @@ auth.onAuthStateChanged(function (user) {
     return;
   }
 
-  db.collection('usuarios').doc(user.uid).get().then(function (doc) {
-    if (!doc.exists) {
-      state.loginError = 'Usuário sem perfil configurado. Fale com a escola.';
-      auth.signOut();
-      return;
-    }
-    const dados = doc.data();
-    state.papel = dados.papel;
+  db.collection('usuarios').doc(user.uid).get()
+    .then(function (doc) {
+      if (!doc.exists) {
+        state.loginError = 'Usuário sem perfil configurado. Fale com a escola.';
+        state.tela = 'login';
+        auth.signOut();
+        return;
+      }
+      const dados = doc.data();
+      state.papel = dados.papel;
 
-    if (dados.papel === 'escola') {
-      iniciarComoEscola();
-    } else if (dados.papel === 'motorista') {
-      state.motoristaId = dados.motoristaId;
-      state.rotaId = dados.rotaId;
-      iniciarComoMotorista();
-    }
-  });
+      if (dados.papel === 'escola') {
+        iniciarComoEscola();
+      } else if (dados.papel === 'motorista') {
+        if (!dados.rotaId) {
+          state.tela = 'erro-config';
+          state.erroGeral = 'Este motorista não tem "rotaId" configurado no documento de "usuarios". Peça para a escola associar a rota.';
+          render();
+          return;
+        }
+        state.motoristaId = dados.motoristaId;
+        state.rotaId = dados.rotaId;
+        iniciarComoMotorista();
+      } else {
+        state.tela = 'erro-config';
+        state.erroGeral = 'O campo "papel" deste usuário está inválido (deveria ser "escola" ou "motorista").';
+        render();
+      }
+    })
+    .catch(function (erro) {
+      state.tela = 'erro-config';
+      tratarErroFirestore(erro);
+    });
 });
 
 function pararTodosOsListeners() {
@@ -74,41 +110,55 @@ function pararTodosOsListeners() {
 function iniciarComoEscola() {
   state.tela = 'escola';
   state.escolaTab = 'alunos';
-  state._unsubscribers.push(ouvirAlunos(function (lista) { state.alunos = lista; render(); }));
-  state._unsubscribers.push(ouvirMotoristas(function (lista) { state.motoristas = lista; render(); }));
-  state._unsubscribers.push(ouvirRotas(function (lista) { state.rotas = lista; render(); }));
-  state._unsubscribers.push(ouvirPontos(function (lista) { state.pontos = lista; render(); }));
+  state._unsubscribers.push(ouvirAlunos(function (lista) { state.alunos = lista; render(); }, null, tratarErroFirestore));
+  state._unsubscribers.push(ouvirMotoristas(function (lista) { state.motoristas = lista; render(); }, tratarErroFirestore));
+  state._unsubscribers.push(ouvirRotas(function (lista) { state.rotas = lista; render(); }, tratarErroFirestore));
+  state._unsubscribers.push(ouvirPontos(function (lista) { state.pontos = lista; render(); }, null, tratarErroFirestore));
   render();
 }
 
 function iniciarComoMotorista() {
   state.tela = 'motorista';
   state.motoristaEtapa = 'rota';
-  state._unsubscribers.push(buscarRotaPorId(state.rotaId, function (rota) { state.rotaAtual = rota; render(); }));
-  state._unsubscribers.push(ouvirPontos(function (lista) { state.pontos = lista; render(); }, state.rotaId));
-  state._unsubscribers.push(ouvirAlunos(function (lista) { state.alunos = lista; render(); }, state.rotaId));
-  state._unsubscribers.push(ouvirEmbarquesDoDia(state.rotaId, function (lista) { state.embarquesHoje = lista; render(); }));
+  state._unsubscribers.push(buscarRotaPorId(state.rotaId, function (rota) { state.rotaAtual = rota; render(); }, tratarErroFirestore));
+  state._unsubscribers.push(ouvirPontos(function (lista) { state.pontos = lista; render(); }, state.rotaId, tratarErroFirestore));
+  state._unsubscribers.push(ouvirAlunos(function (lista) { state.alunos = lista; render(); }, state.rotaId, tratarErroFirestore));
+  state._unsubscribers.push(ouvirEmbarquesDoDia(state.rotaId, function (lista) { state.embarquesHoje = lista; render(); }, tratarErroFirestore));
   render();
 }
 
 function tentarLogin() {
   const email = document.getElementById('login-email').value.trim();
   const senha = document.getElementById('login-senha').value;
+  if (!email || !senha) {
+    state.loginError = 'Preencha e-mail e senha.';
+    render();
+    return;
+  }
   state.loginError = null;
   state.carregandoLogin = true;
   render();
   fazerLogin(email, senha,
-    function () { state.carregandoLogin = false; },
-    function (mensagem) { state.carregandoLogin = false; state.loginError = mensagem; render(); }
+    function () {
+      state.carregandoLogin = false;
+      render(); // onAuthStateChanged troca a tela; isto só garante que o botão nunca fique preso
+    },
+    function (mensagem) {
+      state.carregandoLogin = false;
+      state.loginError = mensagem;
+      render();
+    }
   );
 }
 
-function sair() { fazerLogout(); }
+function sair() {
+  fazerLogout();
+}
 
 /* ===================== TOPBAR ===================== */
 function Topbar() {
-  if (state.tela === 'login') {
-    return `<div class="topbar"><div class="brand"><span class="dot"></span>Rota Escolar</div></div>`;
+  if (state.tela === 'login' || state.tela === 'carregando') {
+    return '<div class="topbar"><div class="brand"><span class="dot"></span>Rota Escolar</div></div>';
   }
   const quem = state.papel === 'escola' ? 'Escola' : (state.rotaAtual ? state.rotaAtual.nome : 'Motorista');
   return `
@@ -122,12 +172,12 @@ function Topbar() {
 function LoginScreen() {
   return `
     <div class="login-wrap">
-      <div class="login-card" style="max-width:420px;">
+      <div class="login-card">
         <div class="kicker">ACESSO AO SISTEMA</div>
-        <h1 style="font-size:30px;">Entrar no Rota Escolar</h1>
+        <h1>Entrar no Rota Escolar</h1>
         <p class="sub">Use o e-mail e a senha cadastrados pela escola.</p>
-        <div class="card" style="text-align:left;">
-          ${state.loginError ? `<div class="error-msg">${state.loginError}</div>` : ''}
+        <div class="card">
+          ${state.loginError ? `<div class="msg msg-error">${state.loginError}</div>` : ''}
           <div class="field" style="margin-bottom:10px;">
             <label>E-mail</label>
             <input id="login-email" type="email" placeholder="seuemail@exemplo.com">
@@ -143,8 +193,22 @@ function LoginScreen() {
           </div>
         </div>
         <p style="font-size:12.5px; color:var(--muted); margin-top:14px;">
-          Seu tipo de acesso (Escola ou Motorista) é identificado automaticamente após o login — ninguém escolhe isso na tela.
+          Seu tipo de acesso (Escola ou Motorista) é identificado automaticamente após o login.
         </p>
+      </div>
+    </div>`;
+}
+
+/* ===================== TELA DE ERRO DE CONFIGURAÇÃO ===================== */
+function ErroConfigScreen() {
+  return `
+    <div class="full-state">
+      <div class="box">
+        <h2>Não foi possível abrir o sistema</h2>
+        <p>${state.erroGeral || 'Erro desconhecido.'}</p>
+        <div class="btn-row" style="justify-content:center; margin-top:20px;">
+          <button class="btn btn-ghost" onclick="sair()">Voltar para o login</button>
+        </div>
       </div>
     </div>`;
 }
@@ -158,7 +222,8 @@ function alunosDoPonto(idPonto) { return state.alunos.filter(function (a) { retu
 function registroDoAlunoHoje(alunoId, pontoId) {
   return state.embarquesHoje.find(function (r) { return r.alunoId === alunoId && r.pontoId === pontoId; });
 }
-function ErrorBox() { return state.formError ? `<div class="error-msg">${state.formError}</div>` : ''; }
+function ErrorBox() { return state.formError ? `<div class="msg msg-error">${state.formError}</div>` : ''; }
+function ErroGeralBanner() { return state.erroGeral ? `<div class="msg msg-error">${state.erroGeral}</div>` : ''; }
 
 /* ===================== ESCOLA — SHELL ===================== */
 const ESCOLA_TABS = [
@@ -176,7 +241,10 @@ function EscolaScreen() {
           return `<button class="${state.escolaTab === t.key ? 'active' : ''}" onclick="setEscolaTab('${t.key}')">${t.label}</button>`;
         }).join('')}
       </div>
-      <div class="content">${EscolaTabContent()}</div>
+      <div class="content">
+        ${ErroGeralBanner()}
+        ${EscolaTabContent()}
+      </div>
     </div>`;
 }
 function setEscolaTab(tab) { state.escolaTab = tab; state.formError = null; render(); }
@@ -215,7 +283,7 @@ function TabAlunos() {
     </div>
     <div class="card">
       <h3>Alunos cadastrados (${state.alunos.length})</h3>
-      ${state.alunos.length ? `<table><tr><th>Nome</th><th>Turma</th><th>Rota</th><th>Ponto</th><th></th></tr>${rows}</table>` : `<div class="empty">Nenhum aluno cadastrado ainda.</div>`}
+      ${state.alunos.length ? `<table><tr><th>Nome</th><th>Turma</th><th>Rota</th><th>Ponto</th><th></th></tr>${rows}</table>` : '<div class="empty">Nenhum aluno cadastrado ainda.</div>'}
     </div>`;
 }
 function salvarAluno() {
@@ -250,13 +318,13 @@ function TabMotoristas() {
       </div>
       <div class="btn-row"><button class="btn btn-primary" onclick="salvarMotorista()">Salvar motorista</button></div>
       <p style="font-size:12px; color:var(--muted); margin-top:10px;">
-        Isso salva só os dados do motorista. Para ele conseguir <b>fazer login</b>, crie também o acesso dele em
-        Firebase Console → Authentication, e um documento na coleção <b>usuarios</b> (veja PARTE 4 do guia).
+        Isto salva só os dados do motorista. Para ele conseguir <b>fazer login</b>, crie também o acesso dele em
+        Authentication e um documento em "usuarios" (guia da Etapa 3).
       </p>
     </div>
     <div class="card">
       <h3>Motoristas cadastrados (${state.motoristas.length})</h3>
-      ${state.motoristas.length ? `<table><tr><th>Nome</th><th>Telefone</th><th>Rota</th><th></th></tr>${rows}</table>` : `<div class="empty">Nenhum motorista cadastrado ainda.</div>`}
+      ${state.motoristas.length ? `<table><tr><th>Nome</th><th>Telefone</th><th>Rota</th><th></th></tr>${rows}</table>` : '<div class="empty">Nenhum motorista cadastrado ainda.</div>'}
     </div>`;
 }
 function salvarMotorista() {
@@ -299,8 +367,15 @@ function TabRotas() {
     </div>
     <div class="card">
       <h3>Rotas cadastradas (${state.rotas.length})</h3>
-      ${state.rotas.length ? `<table><tr><th>Rota</th><th>Turno</th><th>Motorista</th><th></th></tr>${rows}</table>` : `<div class="empty">Nenhuma rota cadastrada ainda.</div>`}
-    </div>`;
+      ${state.rotas.length ? `<table><tr><th>Rota</th><th>Turno</th><th>Motorista</th><th></th></tr>${rows}</table>` : '<div class="empty">Nenhuma rota cadastrada ainda.</div>'}
+    </div>
+    ${state.rotas.length ? `
+    <div class="card">
+      <h3>IDs das rotas (para configurar o login do motorista)</h3>
+      <table><tr><th>Rota</th><th>ID do documento</th></tr>
+        ${state.rotas.map(function (r) { return `<tr><td>${r.nome}</td><td><code>${r.id}</code></td></tr>`; }).join('')}
+      </table>
+    </div>` : ''}`;
 }
 function salvarRota() {
   const nome = document.getElementById('ro-nome').value.trim();
@@ -331,7 +406,7 @@ function TabPontos() {
     <div class="card">
       <h3>Novo ponto de embarque</h3>
       ${ErrorBox()}
-      ${!state.rotas.length ? `<div class="error-msg">Cadastre uma rota antes de adicionar pontos de embarque.</div>` : `
+      ${!state.rotas.length ? '<div class="msg msg-error">Cadastre uma rota antes de adicionar pontos de embarque.</div>' : `
       <div class="form-grid">
         <div class="field"><label>Nome do ponto</label><input id="pt-nome" placeholder="Ex: Praça Central"></div>
         <div class="field"><label>Endereço</label><input id="pt-endereco" placeholder="Rua, número"></div>
@@ -342,7 +417,7 @@ function TabPontos() {
     </div>
     <div class="card">
       <h3>Pontos cadastrados (${state.pontos.length})</h3>
-      ${state.pontos.length ? `<table><tr><th>Ponto</th><th>Endereço</th><th>Rota</th><th></th></tr>${rows}</table>` : `<div class="empty">Nenhum ponto cadastrado ainda.</div>`}
+      ${state.pontos.length ? `<table><tr><th>Ponto</th><th>Endereço</th><th>Rota</th><th></th></tr>${rows}</table>` : '<div class="empty">Nenhum ponto cadastrado ainda.</div>'}
     </div>`;
 }
 function salvarPonto() {
@@ -376,7 +451,7 @@ function TabAssociacao() {
     <div class="card">
       <h3>Associar aluno</h3>
       ${ErrorBox()}
-      ${!state.alunos.length ? `<div class="error-msg">Cadastre alunos primeiro.</div>` : `
+      ${!state.alunos.length ? '<div class="msg msg-error">Cadastre alunos primeiro.</div>' : `
       <div class="form-grid">
         <div class="field"><label>Aluno</label><select id="as-aluno">${opcoesAluno}</select></div>
         <div class="field"><label>Rota</label>
@@ -416,8 +491,11 @@ function salvarAssociacao() {
 
 /* ===================== MOTORISTA ===================== */
 function MotoristaScreen() {
+  if (state.erroGeral) {
+    return `<div class="content">${ErroGeralBanner()}</div>`;
+  }
   if (!state.rotaAtual) {
-    return `<div class="content"><h2 class="page-title">Carregando sua rota...</h2><p class="page-sub">Se essa mensagem não sumir, confirme se seu usuário está associado a uma rota (documento em "usuarios").</p></div>`;
+    return '<div class="content"><h2 class="page-title">Carregando sua rota...</h2></div>';
   }
   if (state.motoristaEtapa === 'rota') return MotoristaRota();
   if (state.motoristaEtapa === 'pontos') return MotoristaPontos();
@@ -463,6 +541,7 @@ function MotoristaPontos() {
 function abrirPonto(id) { state.pontoSelecionado = id; state.motoristaEtapa = 'alunos'; render(); }
 function MotoristaAlunos() {
   const ponto = state.pontos.find(function (p) { return p.id === state.pontoSelecionado; });
+  if (!ponto) { state.motoristaEtapa = 'pontos'; return MotoristaPontos(); }
   const alunos = alunosDoPonto(ponto.id);
   const linhas = alunos.map(function (a) {
     const reg = registroDoAlunoHoje(a.id, ponto.id);
@@ -494,7 +573,9 @@ function marcarEmbarque(alunoId, pontoId, status) {
 /* ===================== APP ROOT ===================== */
 function App() {
   let corpo = '';
-  if (state.tela === 'login') corpo = LoginScreen();
+  if (state.tela === 'carregando') corpo = '<div class="full-state"><div class="box"><p>Carregando…</p></div></div>';
+  else if (state.tela === 'login') corpo = LoginScreen();
+  else if (state.tela === 'erro-config') corpo = ErroConfigScreen();
   else if (state.tela === 'escola') corpo = EscolaScreen();
   else if (state.tela === 'motorista') corpo = `<div class="shell">${MotoristaScreen()}</div>`;
   return `${Topbar()}${corpo}`;

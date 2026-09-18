@@ -1,11 +1,8 @@
 /*
   js/login.js
   ------------------------------------------------------------
-  Cuida do login/logout usando Firebase Authentication e
-  descobre se quem entrou é "escola" ou "motorista" consultando
-  a coleção "usuarios" no Firestore (o documento tem o MESMO id
-  do usuário autenticado).
-  
+  Login/logout com Firebase Authentication + descoberta do
+  papel (escola/motorista) na coleção "usuarios".
 */
 
 function fazerLogin(email, senha, aoSucesso, aoErro) {
@@ -16,10 +13,21 @@ function fazerLogin(email, senha, aoSucesso, aoErro) {
     .then(function (doc) {
       if (!doc.exists) {
         auth.signOut();
-        aoErro('Este usuário não tem um perfil configurado. Fale com a escola.');
+        aoErro('Este login não tem um perfil configurado na coleção "usuarios". Fale com a escola.');
         return;
       }
-      aoSucesso(doc.data()); // { papel: 'escola' } ou { papel: 'motorista', motoristaId, rotaId }
+      const dados = doc.data();
+      if (dados.papel !== 'escola' && dados.papel !== 'motorista') {
+        auth.signOut();
+        aoErro('O campo "papel" do usuário está ausente ou inválido (use exatamente "escola" ou "motorista").');
+        return;
+      }
+      if (dados.papel === 'motorista' && !dados.rotaId) {
+        auth.signOut();
+        aoErro('Este motorista não tem "rotaId" configurado em "usuarios". Associe-o a uma rota.');
+        return;
+      }
+      aoSucesso(dados);
     })
     .catch(function (erro) {
       aoErro(traduzErroFirebase(erro));
@@ -34,7 +42,9 @@ function traduzErroFirebase(erro) {
   const codigo = erro.code || '';
   if (codigo.includes('user-not-found') || codigo.includes('invalid-credential')) return 'E-mail ou senha incorretos.';
   if (codigo.includes('wrong-password')) return 'E-mail ou senha incorretos.';
+  if (codigo.includes('invalid-email')) return 'Digite um e-mail válido.';
   if (codigo.includes('too-many-requests')) return 'Muitas tentativas seguidas. Aguarde um momento e tente de novo.';
   if (codigo.includes('network')) return 'Falha de conexão. Verifique sua internet.';
-  return 'Não foi possível entrar. Tente novamente.';
+  if (codigo.includes('permission-denied')) return 'Sem permissão para acessar os dados (confira as regras do Firestore).';
+  return 'Não foi possível entrar (' + (erro.message || 'erro desconhecido') + ').';
 }
