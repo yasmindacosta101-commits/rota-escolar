@@ -76,9 +76,9 @@ Para acessar e testar o sistema, foram disponibilizados os seguintes usuários:
 
 | Perfil | E-mail | Senha |
 |---|---|---|
-| 🏫 Escola | escola.teste@gmail.com | 123456789 |
-| 🚌 Motorista — João | joao@gmail.com | 123456 |
-| 🚌 Motorista — Carlos | carlos@gmail.com | 1234567 |
+| 🏫 Escola | escola.teste@gmail.com 
+| 🚌 Motorista — João | joao@gmail.com 
+| 🚌 Motorista — Carlos | carlos@gmail.com 
 
 ## 🏫 Acesso da Escola
 
