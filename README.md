@@ -70,6 +70,49 @@ Existem dois tipos de acesso:
 
 Cada usuário possui um perfil configurado no sistema. O motorista também é vinculado a uma rota específica.
 
+# 🔑 Usuários de teste
+
+Para acessar e testar o sistema, foram disponibilizados os seguintes usuários:
+
+| Perfil | E-mail | Senha |
+|---|---|---|
+| 🏫 Escola | escola.teste@gmail.com | 123456789 |
+| 🚌 Motorista — João | joao@gmail.com | 123456 |
+| 🚌 Motorista — Carlos | carlos@gmail.com | 1234567 |
+
+## 🏫 Acesso da Escola
+
+**E-mail:** `escola.teste@gmail.com`  
+
+O usuário da Escola possui acesso às funcionalidades de gerenciamento do sistema, incluindo:
+
+- Cadastro de alunos;
+- Cadastro de motoristas;
+- Cadastro de rotas;
+- Cadastro de pontos de embarque;
+- Associação de alunos às rotas;
+- Associação de alunos aos pontos de embarque.
+
+## 🚌 Acesso do Motorista — João
+
+**E-mail:** `joao@gmail.com`  
+
+O motorista João possui uma rota vinculada ao seu cadastro e pode:
+
+- Visualizar sua rota;
+- Visualizar os pontos de embarque;
+- Visualizar os alunos de cada ponto;
+- Registrar embarque;
+- Registrar quando o aluno não embarcou.
+
+## 🚌 Acesso do Motorista — Carlos
+
+**E-mail:** `carlos@gmail.com`  
+
+O motorista Carlos também possui acesso às funcionalidades destinadas ao motorista, conforme sua rota vinculada.
+
+
+
 ### 🗺️ Organização das rotas
 
 A escola pode cadastrar as rotas utilizadas pelo transporte escolar e definir o motorista responsável.
