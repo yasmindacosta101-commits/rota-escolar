@@ -1,0 +1,36 @@
+name: Publicar site no GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Baixar arquivos do repositório
+        uses: actions/checkout@v6
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Publicar conteúdo da pasta src
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: './src'
+
+      - name: Colocar site no ar
+        id: deployment
+        uses: actions/deploy-pages@v4
